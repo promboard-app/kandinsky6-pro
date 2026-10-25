@@ -29,7 +29,7 @@ PromBoard 커뮤니티 플러그인입니다. 캔버스에 **Kandinsky 6 Pro 영
 
 ## 필요한 사양
 
-- NVIDIA 그래픽카드 전용(CUDA), **16GB 이상**(공식 16GB 프리셋). 변환기 · VAE 를 블록 단위로 올렸다 내리며 돕니다.
+- NVIDIA 그래픽카드 전용(CUDA), **16GB 이상**(공식 16GB 프리셋). 변환기 · VAE 를 블록 단위로 올렸다 내리며 돕니다. 글 인코더는 프롬프트를 임베딩으로 바꿀 때만 그래픽카드에 올리고 끝나면 RAM 으로 내립니다(1.0.2 부터).
 - RAM **64GB 이상**. 공식 16GB 프리셋이 호스트 RAM 을 약 58GiB 씁니다(Kandinsky 6.0 기술 보고서).
 - PromBoard 는 노드 한 번 실행을 약 15분으로 끊습니다. 그 안에 끝나지 않을 것 같으면 노드가 먼저 멈추고 해상도 · 판을 바꾸라고 알립니다.
 
@@ -67,7 +67,7 @@ A PromBoard community plugin. It adds one **Kandinsky 6 Pro video+audio** node t
 - Inputs: prompt (required; English or Russian works best — write `Audio: …` to describe the sound), start frame (optional, center-cropped). Outputs: a 5 s MP4 (H.264 24 fps + AAC 44.1 kHz) and the audio alone as WAV.
 - Settings: model (Pro fast = official distilled, 10 steps · guidance 1.0 · PiFlow; Pro normal = 50 steps · guidance 5.0), resolution (SD 864×480 · HD 1280×720), orientation (without a start frame), sound on/off, seed, negative prompt (normal only).
 - Downloads (only the chosen transformer, once): shared text encoders (Qwen2.5-VL-7B · CLIP-L) · VAE · audio VAE · vocoder from kandinskylab/Kandinsky-6.0-Lite-distill-5s-Diffusers (same files as the Pro repos, shared with the Kandinsky 6 Lite plugin, 20.3 GB) + Pro fast transformer (60.3 GB) or Pro normal transformer (69.7 GB, Hugging Face access approval needed). About 81 GB / 90 GB in total.
-- Requirements: NVIDIA GPU (CUDA), **16 GB or more** (official 16 GB preset; the transformer and VAE are block-offloaded). **64 GB+ RAM** — the official 16 GB preset uses about 58 GiB of host RAM. PromBoard stops one node run after about 15 minutes; the node stops earlier and says so when it will not make it.
+- Requirements: NVIDIA GPU (CUDA), **16 GB or more** (official 16 GB preset; the transformer and VAE are block-offloaded, and the text encoders sit on the GPU only while encoding the prompt — from 1.0.2). **64 GB+ RAM** — the official 16 GB preset uses about 58 GiB of host RAM. PromBoard stops one node run after about 15 minutes; the node stops earlier and says so when it will not make it.
 - License: plugin code Apache-2.0; model weights MIT, no revenue cap or regional restriction. Only the Pro normal repo needs a click-through approval on Hugging Face (automatic).
 - **Install**: PromBoard → Plugin Manager → **Community plugins** → Browse → install. Turn off **Restricted mode** and enable the plugin. For Pro normal only, accept the terms on the [model page](https://huggingface.co/kandinskylab/Kandinsky-6.0-Pro-5s-Diffusers) and paste a Read token into the plugin's `HF_TOKEN` field.
 

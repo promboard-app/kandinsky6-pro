@@ -16,6 +16,8 @@
     (diffusers group offloading). 파이프라인에는 글 인코더를 넣지 않고 임베딩을 넘긴다.
     파이프라인은 프롬프트를 1024 토큰으로 채우고 채운 자리를 마스크로 가리는데, 임베딩을 넘기면 마스크를 받을 칸이 없어
     채운 자리를 잘라 낸 임베딩을 넘긴다(가린 토큰을 빼는 것과 같다 — 파이프라인도 채운 자리가 없으면 마스크를 None 으로 둔다).
+  - 글 인코더(CLIP, 그래픽카드 20GB 이상이면 Qwen 통째로)는 인코딩 때만 그래픽카드에 올리고 끝나면 RAM 으로 내린다(_encode) —
+    남겨 두면 블록씩 올리는 변환기 · VAE 차례에도 그래픽카드를 차지한다. Kandinsky 6 Lite 와 같다.
   - VAE 는 타일로 나눠 푼다.
 
 노드 코드 약속(NODES · ctx · 입출력 모양)은 PromBoard docs/Scrum4/02_스키마-v0.md §6.
@@ -92,13 +94,10 @@ def _text_encoders(ctx, progress):
     tok2 = CLIPTokenizer.from_pretrained(os.path.join(root, "tokenizer_2"))
     clip = CLIPTextModel.from_pretrained(os.path.join(root, "text_encoder_2"), torch_dtype=torch.bfloat16)
     clip.eval()
-    if _vram_mb() >= TE_ON_GPU_MB:
-        qwen.to("cuda")
-    else:
+    if _vram_mb() < TE_ON_GPU_MB:
         # 층(leaf) 단위로 올렸다 내린다. 블록 단위(block_level)는 바로 아래 자식의 ModuleList 만 묶는데 Qwen2.5-VL 은 층이
         # model.language_model.layers 로 깊이 있어, 모델 전체(15.4GiB)가 한 묶음으로 올라가 12GB 를 넘었다(실측 16.4GiB → 층 단위 1.9GiB, 결과 같음).
         apply_group_offloading(qwen, onload_device=torch.device("cuda"), offload_device=torch.device("cpu"), offload_type="leaf_level")
-    clip.to("cuda")
     _CACHE["te"] = (processor, qwen, tok2, clip)
     ctx.log(f"text encoders loaded in {time.monotonic() - start:.1f}s")
     return _CACHE["te"]
@@ -111,16 +110,28 @@ def _encode(ctx, progress, texts):
 
     processor, qwen, tok2, clip = _text_encoders(ctx, progress)
     progress(0.0, "encode")
+    # 그래픽카드에는 쓸 때만 올린다(모델 읽기는 그래픽카드를 쓰지 않게). 층 단위로 내리지 않는 큰 그래픽카드는 Qwen 도 통째로.
+    whole = _vram_mb() >= TE_ON_GPU_MB
+    clip.to("cuda")
+    if whole:
+        qwen.to("cuda")
     out = []
-    for text in texts:
-        with torch.no_grad():
-            emb, pooled, mask = Kandinsky6TI2VAPipeline._get_prompt_embeds(
-                [text], processor, qwen, tok2, clip, MAX_SEQUENCE_LENGTH, torch.device("cuda")
-            )
-        if mask is not None:
-            emb = emb[:, mask[0]]
-        out.append((emb.to(torch.bfloat16), pooled.to(torch.bfloat16)))
-        ctx.check_cancel()
+    try:
+        for text in texts:
+            with torch.no_grad():
+                emb, pooled, mask = Kandinsky6TI2VAPipeline._get_prompt_embeds(
+                    [text], processor, qwen, tok2, clip, MAX_SEQUENCE_LENGTH, torch.device("cuda")
+                )
+            if mask is not None:
+                emb = emb[:, mask[0]]
+            out.append((emb.to(torch.bfloat16), pooled.to(torch.bfloat16)))
+            ctx.check_cancel()
+    finally:
+        # 멈추거나 실패해도 내린다 — 변환기 · VAE 가 쓸 그래픽카드 메모리를 글 인코더가 쥐고 있지 않게.
+        clip.to("cpu")
+        if whole:
+            qwen.to("cpu")
+        _free_cuda()
     return out
 
 

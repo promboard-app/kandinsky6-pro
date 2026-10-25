@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "id": "promboard.kandinsky6-pro",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "name": "Kandinsky 6.0 Pro — 소리까지 든 영상 만들기 (29B)",
   "description": "Kandinsky Lab 의 Kandinsky 6.0 Pro(29B) 공개 모델로 프롬프트에서, 또는 시작 프레임 그림에서 이어지는 5초 영상을 소리(44.1kHz, 입모양 맞춤)까지 함께 만든다. Lite 보다 화질 · 움직임이 낫고 훨씬 무겁다: 받기 약 81GB(빠른 판) · 90GB(일반 판), RAM 64GB 이상(공식 16GB 프리셋이 호스트 RAM 약 58GiB 사용), 그래픽카드 16GB 이상. 일반 판은 허깅페이스 사용 승인이 필요하다. 아직 실제로 돌려 보지 않았다(검증 안 됨). 프롬프트는 영어(또는 러시아어)로 자세히. 라이선스 MIT. NVIDIA 그래픽카드 전용.",
   "author": "PromBoard",
