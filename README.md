@@ -1,6 +1,6 @@
 # Kandinsky 6.0 Pro — 소리까지 든 영상 만들기 (29B)
 
-PromBoard 커뮤니티 플러그인입니다. 캔버스에 **Kandinsky 6 Pro 영상+소리** 노드 하나를 더합니다. Kandinsky Lab 이 공개한 Kandinsky 6.0 Pro(29B)로 프롬프트에서, 또는 시작 프레임 그림에서 이어지는 5초 영상을 소리(44.1kHz)까지 함께 만듭니다. 같은 팀의 Lite(2B) 보다 화질 · 움직임이 낫고 훨씬 무겁습니다.
+PromBoard 커뮤니티 플러그인입니다. 캔버스에 **Kandinsky 6 Pro 영상+소리** 노드 하나를 더합니다. Kandinsky Lab 이 공개한 Kandinsky 6.0 Pro(29B)로 프롬프트에서, 또는 시작 프레임 그림에서 이어지는 5초 영상을 소리(44.1kHz)까지 함께 만듭니다. 같은 팀의 Lite(3B) 보다 화질 · 움직임이 낫고 훨씬 무겁습니다.
 
 > 🔴 **검증 안 됨**: 아직 실제로 돌려 보지 않았습니다. 이 플러그인을 만든 PC(그래픽카드 12GB)는 공식 최소 사양(16GB)에 못 미칩니다. 문제가 있으면 [이슈](https://github.com/promboard-app/kandinsky6-pro/issues)로 알려 주세요.
 
@@ -60,7 +60,7 @@ nodes/requirements*.txt  받을 패키지 · 운영체제별 해시 잠금 파�
 
 ## English
 
-A PromBoard community plugin. It adds one **Kandinsky 6 Pro video+audio** node that runs Kandinsky Lab's open Kandinsky 6.0 Pro (29B): a 5-second video with matching audio (44.1 kHz), from a prompt or continuing from a start frame. Better quality and motion than Lite (2B), and much heavier.
+A PromBoard community plugin. It adds one **Kandinsky 6 Pro video+audio** node that runs Kandinsky Lab's open Kandinsky 6.0 Pro (29B): a 5-second video with matching audio (44.1 kHz), from a prompt or continuing from a start frame. Better quality and motion than Lite (3B), and much heavier.
 
 > 🔴 **Unverified**: not run yet. The 12 GB card this plugin was built on is below the official minimum (16 GB). Please report problems in [issues](https://github.com/promboard-app/kandinsky6-pro/issues).
 
