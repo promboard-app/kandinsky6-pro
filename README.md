@@ -2,7 +2,7 @@
 
 PromBoard 커뮤니티 플러그인입니다. 캔버스에 **Kandinsky 6 Pro 영상+소리** 노드 하나를 더합니다. Kandinsky Lab 이 공개한 Kandinsky 6.0 Pro(29B)로 프롬프트에서, 또는 시작 프레임 그림에서 이어지는 5초 영상을 소리(44.1kHz)까지 함께 만듭니다. 같은 팀의 Lite(2B) 보다 화질 · 움직임이 낫고 훨씬 무겁습니다.
 
-> 🔴 **미검증**: 아직 실제로 돌려 보지 않았습니다. 이 플러그인을 만든 PC(그래픽카드 12GB)는 공식 최소 사양(16GB)에 못 미칩니다. 문제가 있으면 [이슈](https://github.com/promboard-app/kandinsky6-pro/issues)로 알려 주세요.
+> 🔴 **검증 안 됨**: 아직 실제로 돌려 보지 않았습니다. 이 플러그인을 만든 PC(그래픽카드 12GB)는 공식 최소 사양(16GB)에 못 미칩니다. 문제가 있으면 [이슈](https://github.com/promboard-app/kandinsky6-pro/issues)로 알려 주세요.
 
 ## 입력과 결과
 

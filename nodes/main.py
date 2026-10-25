@@ -1,4 +1,4 @@
-"""promboard.kandinsky6-pro — Kandinsky 6.0 Pro(29B) 영상+소리 만들기 노드 코드. 🔴 미검증: 이 PC(12GB)에서는 돌려 보지 않았다.
+"""promboard.kandinsky6-pro — Kandinsky 6.0 Pro(29B) 영상+소리 만들기 노드 코드. 🔴 검증 안 됨: 이 PC(12GB)에서는 돌려 보지 않았다.
 
 노드 하나(kandinsky6)가 프롬프트(필수)와 시작 프레임(선택)을 받아 소리가 든 5초 mp4(H.264 + AAC 44.1kHz) 한 편과
 그 소리만 따로 담은 wav 를 낸다. 시작 프레임을 이으면 그 그림에서 시작하는 영상(이미지→영상+소리)이다.
@@ -12,7 +12,7 @@
 
 메모리(공식 16GB 프리셋은 변환기 블록 2개만 그래픽카드에 두고 호스트 RAM 약 58GiB 를 쓴다 — 논문 §6)
   - 변환기(bf16 약 58GiB)는 블록 단위로 올렸다 내린다(diffusers group offloading, block_level). VAE · 소리 VAE · 보코더도 같은 방식.
-  - Qwen2.5-VL-7B(bf16 약 16GB)는 그래픽카드에 통째로 못 올려 블록 묶음 단위로 올렸다 내리며 프롬프트를 임베딩으로 바꾼다
+  - Qwen2.5-VL-7B(bf16 약 16GB)는 그래픽카드에 통째로 못 올려 층(leaf) 단위로 올렸다 내리며 프롬프트를 임베딩으로 바꾼다
     (diffusers group offloading). 파이프라인에는 글 인코더를 넣지 않고 임베딩을 넘긴다.
     파이프라인은 프롬프트를 1024 토큰으로 채우고 채운 자리를 마스크로 가리는데, 임베딩을 넘기면 마스크를 받을 칸이 없어
     채운 자리를 잘라 낸 임베딩을 넘긴다(가린 토큰을 빼는 것과 같다 — 파이프라인도 채운 자리가 없으면 마스크를 None 으로 둔다).
@@ -95,13 +95,9 @@ def _text_encoders(ctx, progress):
     if _vram_mb() >= TE_ON_GPU_MB:
         qwen.to("cuda")
     else:
-        apply_group_offloading(
-            qwen,
-            onload_device=torch.device("cuda"),
-            offload_device=torch.device("cpu"),
-            offload_type="block_level",
-            num_blocks_per_group=2,
-        )
+        # 층(leaf) 단위로 올렸다 내린다. 블록 단위(block_level)는 바로 아래 자식의 ModuleList 만 묶는데 Qwen2.5-VL 은 층이
+        # model.language_model.layers 로 깊이 있어, 모델 전체(15.4GiB)가 한 묶음으로 올라가 12GB 를 넘었다(실측 16.4GiB → 층 단위 1.9GiB, 결과 같음).
+        apply_group_offloading(qwen, onload_device=torch.device("cuda"), offload_device=torch.device("cpu"), offload_type="leaf_level")
     clip.to("cuda")
     _CACHE["te"] = (processor, qwen, tok2, clip)
     ctx.log(f"text encoders loaded in {time.monotonic() - start:.1f}s")
@@ -272,12 +268,19 @@ def kandinsky6(ctx, inputs, settings):
             outputs["audio"] = _write_wav(ctx.out_path("kandinsky6-pro.wav"), audio[0].numpy(), pipe.audio_sample_rate)
         ctx.log(f"done in {time.monotonic() - t0:.1f}s, peak torch VRAM {peak:.2f} GiB")
     except torch.OutOfMemoryError:
-        _CACHE.update(key=None, pipe=None)
-        raise RuntimeError(
-            "그래픽카드 메모리가 모자라 멈췄습니다. 해상도를 SD 로 낮춰 주세요. 다른 프로그램(게임 · 다른 AI)이 그래픽카드를 쓰고 있으면 닫아 주세요."
-        ) from None
+        oom = True
+    else:
+        oom = False
     finally:
         _free_cuda()
+    if oom:
+        # except 블록 밖에서 정리하고 새 오류를 낸다 — 블록 안에서 내면 원래 오류(와 그 프레임이 쥔 그래픽카드 텐서)가
+        # 새 오류의 __context__ 로 남아 사이드카가 다음 실행까지 메모리를 놓지 못한다.
+        _CACHE.update(key=None, pipe=None)
+        _free_cuda()
+        raise RuntimeError(
+            "그래픽카드 메모리가 모자라 멈췄습니다. 해상도를 SD 로 낮춰 주세요. 다른 프로그램(게임 · 다른 AI)이 그래픽카드를 쓰고 있으면 닫아 주세요."
+        )
     ctx.progress(1.0, "done")
     return outputs
 
